@@ -1,10 +1,9 @@
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
+const errorHandler = require('./middlewares/errorhandler');
 require('dotenv').config();
 
-const authRoutes = require('./routes/authRoutes');
-const articleRoutes = require('./routes/articleRoutes');
 
 const app = express();
 
@@ -16,8 +15,16 @@ app.use(express.json());
 connectDB();
 
 // Use Routes
-app.use('/api/v1/auth', authRoutes);
-app.use('/api/v1/articles', articleRoutes);
+
+app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/profile', require('./routes/profileRoutes'));
+app.use('/api/kyc', require('./routes/ekycRoutes'));
+app.use('/api/banks', require('./routes/bankRoutes'));
+app.use('/api/nominee', require('./routes/nomineeRoutes'));
+app.use('/api/investments', require('./routes/investmentRoutes'));
+app.use('/api/wallet', require('./routes/walletRoutes'));
+
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

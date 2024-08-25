@@ -1,73 +1,49 @@
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const generateToken = require('../config/jwt');
 
-
-exports.register = async (req, res) => {
-    const { username, email, password } = req.body;
-    const source = req.header('x-source');
-
-    // Check source header
-    if (!source || source !== 'android-app') {
-        return res.status(400).json({ success: false, msg: 'Invalid request source' });
-    }
-
+// Send OTP (Dummy implementation)
+exports.login = async (req, res, next) => {
     try {
-        let user = await User.findOne({ email, delete: false });
-        if (user) return res.status(400).json({ success: false, msg: 'User already exists' });
-        let isUsernameExist = await User.findOne({ username, delete: false });
-        if (isUsernameExist) return res.status(400).json({ success: false, msg: 'Username already exists' });
+        const { phoneNumber } = req.body;
 
-        user = new User({
-            username,
-            email,
-            password: await bcrypt.hash(password, 10),
-        });
+        let user = await User.findOne({ phoneNumber });
 
+        if (!user) {
+            user = await User.create({ phoneNumber });
+        }
+
+        // Generate and send OTP (dummy implementation here)
+        const otp = '123456';
+        user.otp = otp;
         await user.save();
 
-        const payload = { id: user.id };
-        const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
-
-        res.json({success : true, token });
-    } catch (err) {
-        console.log("ERROR :", err.message)
-        res.status(500).json({ success: false, msg: 'Server error' });
+        res.status(200).json({ message: 'OTP sent successfully' });
+    }
+    catch (err) {
+        next(err);
     }
 };
 
+// Verify OTP
+exports.verifyOtp = async (req, res, next) => {
+try {
+    const { phoneNumber, otp } = req.body;
 
-exports.login = async (req, res) => {
-    const { email, password } = req.body;
-    const source = req.header('x-source');
+    const user = await User.findOne({ phoneNumber });
 
-    // Check source header
-    if (!source || source !== 'android-app') {
-        return res.status(400).json({success: false, msg: 'Invalid request source' });
+    if (!user || user.otp !== otp) {
+        return res.status(401).json({ message: 'Invalid OTP' });
     }
 
-    try {
-        const user = await User.findOne({ email, delete: false });
-        if (!user) return res.status(400).json({success: false, msg: 'User does not exist' });
-
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) return res.status(400).json({success: false, msg: 'Invalid credentials' });
-
-        const payload = { id: user.id };
-        const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
-
-        res.json({success : true, token });
-    } catch (err) {
-        res.status(500).json({ success: false, msg: 'Server error' });
-    }
+    const token = generateToken(user);
+    res.status(200).json({ token });
+}
+catch (err) {
+    next(err);
+}
 };
 
-
-exports.getProfile = async (req, res) => {
-    try {
-        const user = await User.findById(req.user.id).select('-password');
-        res.json({success : true, user});
-    } catch (err) {
-        res.status(500).json({ success: false, msg: 'Server error' });
-    }
+// Logout
+exports.logout = (req, res, next) => {
+    res.status(200).json({ message: 'Logged out successfully' });
 };

@@ -1,7 +1,7 @@
 {
-  "name": "quokka_lab_task",
+  "name": "flyweis_task",
   "version": "1.0.0",
-  "description": "QuokkaLab R-2 Task",
+  "description": "Flyweis Task",
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
